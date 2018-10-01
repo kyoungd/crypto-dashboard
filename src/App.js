@@ -1,24 +1,8 @@
 import React, { Component } from 'react';
 import './App.css';
-import styled, {css} from 'styled-components';
+import styled from 'styled-components';
+import AppBar from './AppBar';
 
-const Logo = styled.div`
-  font-size:1.5em;
-`
-
-const ControlButton = styled.div`
-  cursor: pointer;
-  ${props => props.active && css`
-    text-shadow: 0px 0px 60px #03ff03;
-    font-size:1.1em;
-  `}
-`
-
-const Bar = styled.div`
-  display:grid;
-  grid-template-columns: 180px auto 100px 100px;
-  margin-bottom: 40px;
-`
 const Content = styled.div`
 `
 
@@ -35,7 +19,6 @@ const checkFirstVisit = () => {
     }
   }
 }
-
 
 class App extends Component {
   state = {
@@ -61,23 +44,12 @@ class App extends Component {
       </div>
     </div>
   }
+  // {AppBar.call(this)}  -- bind this context to the AppBar method.
+  // AppBar is an external method rathern than a component.
   render() {
     return (
       <AppLayout>
-        <Bar>
-          <Logo>
-            CRYPTO-DASH
-          </Logo>
-          <div></div>
-          { !this.state.firstVisit && (
-            <ControlButton active={this.displayInDashboard()} onClick={()=>{this.setState({page : 'DASHBOARD'})}}>
-              DASHBOARD
-            </ControlButton>
-          )}
-          <ControlButton active={this.displayInSettings()} onClick={()=>{this.setState({page : 'SETTINGS'})}}>
-            SETTINGS
-          </ControlButton>
-        </Bar>
+        {AppBar.call(this)}
         <Content>
           { this.displayInSettings() && this.settingsContent() }
         </Content>
