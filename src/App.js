@@ -2,6 +2,11 @@ import React, { Component } from 'react';
 import './App.css';
 import styled from 'styled-components';
 import AppBar from './AppBar';
+const cc = require('cryptocompare');
+const config = require('./config.json');
+
+// AppBar is a external method.  Not a seperate react component.  It preserves this reference.
+// You don't always need to create a new react component.
 
 const Content = styled.div`
 `
@@ -15,18 +20,27 @@ const checkFirstVisit = () => {
   if (!cryptoDashData) {
     return {
       firstVisit: true,
-      page: 'SETTINGS'
+      page: config.bar.settings
     }
   }
 }
 
 class App extends Component {
   state = {
-    page: 'DASHBOARD',
+    page: config.bar.settings,
     ...checkFirstVisit()
   };
-  displayInDashboard = () => this.state.page === 'DASHBOARD';
-  displayInSettings = () => this.state.page === 'SETTINGS';
+
+  componentDidMount = () => {
+    this.fetchCoin();
+  }
+  fetchCoin = async () => {
+    let coinList = (await cc.coinList()).Data;
+    this.setState( {coinList} );
+    console.log('fetchCoin calling...', coinList);
+  }
+  displayInDashboard = () => this.state.page === config.bar.dashboard;
+  displayInSettings = () => this.state.page === config.bar.settings;
   firstVisitMessage = () => {
     if (this.state.firstVisit) {
       return <div>Welcome to the site.  Please select your favorite coins.</div>;
@@ -34,7 +48,7 @@ class App extends Component {
   };
   confirmFavorites = ()=> {
     localStorage.setItem('cryptoDash', 'test');
-    this.setState({firstVisit: false, page:'DASHBOARD'});
+    this.setState({firstVisit: false, page:config.bar.dashboard});
   };
   settingsContent = () => {
     return <div>
@@ -44,18 +58,30 @@ class App extends Component {
       </div>
     </div>
   }
-  // {AppBar.call(this)}  -- bind this context to the AppBar method.
-  // AppBar is an external method rathern than a component.
+  loadingContent = () => {
+    if (!this.state.coinList) {
+      return <div>Coin List Loading...</div>
+    }
+  }
+
   render() {
     return (
       <AppLayout>
-        {AppBar.call(this)}
-        <Content>
-          { this.displayInSettings() && this.settingsContent() }
-        </Content>
+        {
+          // {AppBar.call(this)}  -- bind this context to the AppBar method.
+          // AppBar is an external method rathern than a component.
+          AppBar.call(this)
+        }
+        { this.loadingContent() || 
+          <Content>
+            { this.displayInSettings() && this.settingsContent() }
+          </Content>
+        }
+        
       </AppLayout>      
     );
   }
 }
+
 
 export default App;
