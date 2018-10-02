@@ -4,6 +4,7 @@ import styled from 'styled-components';
 import AppBar from './AppBar';
 import CoinList from './CoinList';
 
+const _ = require('lodash');
 const cc = require('cryptocompare');
 const config = require('./config.json');
 
@@ -30,6 +31,7 @@ const checkFirstVisit = () => {
 class App extends Component {
   state = {
     page: config.bar.settings,
+    favorites: ['ETH', 'BTC', 'XMR', 'DOGE', 'EOS'],
     ...checkFirstVisit()
   };
 
@@ -58,6 +60,7 @@ class App extends Component {
       <div onClick={()=>this.confirmFavorites() }>
         Confirm Favorites
       </div>
+      { CoinList.call(this, true) }
       { CoinList.call(this) }
     </div>
   }
@@ -66,7 +69,21 @@ class App extends Component {
       return <div>Coin List Loading...</div>
     }
   }
-
+  addCoinToFavorite =(coin) => {
+    console.log(' addCoinToFavorite: ' + coin);
+    let favorites = [...this.state.favorites];
+    if (!_.includes(favorites, coin))
+    {
+      favorites.push(coin);
+      this.setState({favorites});
+    }
+  }
+  isInFavorite = (coin) => _.includes(this.state.favorites, coin);
+  removeCoinFromFavorite = (coin) => {
+    console.log(' removeCoinFromFavorite: ' + coin)
+    let favorites = [...this.state.favorites];
+    this.setState({favorites: _.pull(favorites, coin)});
+  }
   render() {
     return (
       <AppLayout>
