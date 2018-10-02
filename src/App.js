@@ -2,6 +2,8 @@ import React, { Component } from 'react';
 import './App.css';
 import styled from 'styled-components';
 import AppBar from './AppBar';
+import CoinList from './CoinList';
+
 const cc = require('cryptocompare');
 const config = require('./config.json');
 
@@ -56,6 +58,7 @@ class App extends Component {
       <div onClick={()=>this.confirmFavorites() }>
         Confirm Favorites
       </div>
+      { CoinList.call(this) }
     </div>
   }
   loadingContent = () => {
