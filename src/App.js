@@ -31,7 +31,8 @@ const checkFirstVisit = () => {
       page: config.bar.settings
     }
   }
-  return {favorites: cryptoFavorite.favorites};
+  let {favorites, currentFavorite } = cryptoFavorite;
+  return {favorites, currentFavorite};
 }
 
 class App extends Component {
@@ -48,7 +49,6 @@ class App extends Component {
   fetchCoin = async () => {
     let coinList = (await cc.coinList()).Data;
     this.setState( {coinList} );
-    console.log('fetchCoin calling...', coinList);
   }
   fetchPrice = async () => {
     let prices;
@@ -57,7 +57,6 @@ class App extends Component {
     } catch (err) {
       this.setState({error: true});
     }
-    console.log("prices : ", prices);
     this.setState({prices});
   }
   prices = () => {
@@ -75,8 +74,14 @@ class App extends Component {
     }
   };
   confirmFavorites = ()=> {
-    this.setState({firstVisit: false, page:config.bar.dashboard});
-    localStorage.setItem('cryptoFavorite', JSON.stringify({favorites: this.state.favorites}));
+    let currentFavorite = this.state.favorites[0];
+    this.setState({
+      firstVisit: false, 
+      page:config.bar.dashboard, 
+      prices: null,
+      currentFavorite
+    });
+    localStorage.setItem('cryptoFavorite', JSON.stringify({favorites: this.state.favorites, currentFavorite}));
     this.setState({prices: null});
     this.fetchPrice();
   };
@@ -125,11 +130,9 @@ class App extends Component {
       return _.includes(fuzzyResult, symbol) || _.includes(fuzzyResult, coinName);
     } );
     this.setState({filteredCoins});
-    console.log(filteredCoins); 
   }, 500);
   filterCoins = (e) => {
     let inputValue = _.get(e, 'target.value');
-    console.log('filter coins ' + inputValue);
     if (!inputValue) {
       this.setState({filteredValue : null})
     }
