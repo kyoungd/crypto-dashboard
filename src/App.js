@@ -3,9 +3,14 @@ import './App.css';
 import styled from 'styled-components';
 import AppBar from './AppBar';
 import CoinList from './CoinList';
+import Search from './Search';
+import { CenterDiv } from './CenterDiv';
+import { ConfirmButton } from './Button';
+import DashboardContent from './Dashboard';
 
 const _ = require('lodash');
 const cc = require('cryptocompare');
+const fuzzy = require('fuzzy');
 const config = require('./config.json');
 
 // AppBar is a external method.  Not a seperate react component.  It preserves this reference.
@@ -19,29 +24,48 @@ const AppLayout=styled.div`
 `
 
 const checkFirstVisit = () => {
-  let cryptoDashData = localStorage.getItem("cryptoDash");
-  if (!cryptoDashData) {
+  let cryptoFavorite = JSON.parse(localStorage.getItem("cryptoFavorite"));
+  if (!cryptoFavorite) {
     return {
       firstVisit: true,
       page: config.bar.settings
     }
   }
+  return {favorites: cryptoFavorite.favorites};
 }
 
 class App extends Component {
   state = {
-    page: config.bar.settings,
+    page: config.bar.dashboard,
     favorites: ['ETH', 'BTC', 'XMR', 'DOGE', 'EOS'],
     ...checkFirstVisit()
   };
 
   componentDidMount = () => {
     this.fetchCoin();
+    this.fetchPrice();
   }
   fetchCoin = async () => {
     let coinList = (await cc.coinList()).Data;
     this.setState( {coinList} );
     console.log('fetchCoin calling...', coinList);
+  }
+  fetchPrice = async () => {
+    let prices;
+    try {
+      prices = await this.prices();
+    } catch (err) {
+      this.setState({error: true});
+    }
+    console.log("prices : ", prices);
+    this.setState({prices});
+  }
+  prices = () => {
+    let promises = [];
+    this.state.favorites.forEach((coin) => {
+      promises.push(cc.priceFull(coin, "USD"));
+    });
+    return Promise.all(promises);
   }
   displayInDashboard = () => this.state.page === config.bar.dashboard;
   displayInSettings = () => this.state.page === config.bar.settings;
@@ -51,16 +75,21 @@ class App extends Component {
     }
   };
   confirmFavorites = ()=> {
-    localStorage.setItem('cryptoDash', 'test');
     this.setState({firstVisit: false, page:config.bar.dashboard});
+    localStorage.setItem('cryptoFavorite', JSON.stringify({favorites: this.state.favorites}));
+    this.setState({prices: null});
+    this.fetchPrice();
   };
   settingsContent = () => {
     return <div>
       { this.firstVisitMessage() }
-      <div onClick={()=>this.confirmFavorites() }>
-        Confirm Favorites
-      </div>
+      { Search.call(this) }
       { CoinList.call(this, true) }
+      <CenterDiv>
+        <ConfirmButton onClick={()=>this.confirmFavorites() }>
+          Confirm Favorites
+        </ConfirmButton>
+      </CenterDiv>
       { CoinList.call(this) }
     </div>
   }
@@ -68,9 +97,11 @@ class App extends Component {
     if (!this.state.coinList) {
       return <div>Coin List Loading...</div>
     }
+    if (!this.state.prices) {
+      return <div>Coin Price Loading...</div>
+    }
   }
   addCoinToFavorite =(coin) => {
-    console.log(' addCoinToFavorite: ' + coin);
     let favorites = [...this.state.favorites];
     if (!_.includes(favorites, coin))
     {
@@ -80,9 +111,30 @@ class App extends Component {
   }
   isInFavorite = (coin) => _.includes(this.state.favorites, coin);
   removeCoinFromFavorite = (coin) => {
-    console.log(' removeCoinFromFavorite: ' + coin)
     let favorites = [...this.state.favorites];
     this.setState({favorites: _.pull(favorites, coin)});
+  }
+  handleFilter = _.debounce(inputValue => {
+    let coinSymbols = Object.keys(this.state.coinList);
+    let coinNames = coinSymbols.map((symbol) => this.state.coinList[symbol].CoinName);
+    let allStringsToSearch = coinSymbols.concat(coinNames);
+    let fuzzyResult = fuzzy.filter(inputValue, allStringsToSearch, {}).map(result=>result.string);
+    let filteredCoins = _.pickBy(this.state.coinList, (result, symbol)=> {
+      let coinName = result.CoinName;
+      // if our fuzzy logic contains this symbol or the coinName
+      return _.includes(fuzzyResult, symbol) || _.includes(fuzzyResult, coinName);
+    } );
+    this.setState({filteredCoins});
+    console.log(filteredCoins); 
+  }, 500);
+  filterCoins = (e) => {
+    let inputValue = _.get(e, 'target.value');
+    console.log('filter coins ' + inputValue);
+    if (!inputValue) {
+      this.setState({filteredValue : null})
+    }
+    else
+      this.handleFilter(inputValue);
   }
   render() {
     return (
@@ -95,6 +147,7 @@ class App extends Component {
         { this.loadingContent() || 
           <Content>
             { this.displayInSettings() && this.settingsContent() }
+            { this.displayInDashboard() && DashboardContent.call(this) }
           </Content>
         }
         
