@@ -2,6 +2,11 @@ import React from 'react';
 import { CoinGrid, CoinTile, CoinHeader, CoinSymbol } from './CoinList';
 import styled, {css} from 'styled-components';
 import { fontSizeBig, fontSize3, subtleBoxShadow, lightBlueBackground } from './Style';
+import highchartsConfig from './HighchartsConfig';
+import highchartsTheme from './HighchartsTheme';
+
+const ReactHighcharts = require('react-highcharts');
+ReactHighcharts.Highcharts.setOptions(highchartsTheme);
 
 const numberFormat = (number) => +(number + '').slice(0, 7);
 const ChangePct = styled.div`
@@ -75,7 +80,7 @@ export default function() {
             {<img alt="nothing" style={{height: '200px', display: 'block', margin:'auto'}} src={`http://www.cryptocompare.com/${this.state.coinList[this.state.currentFavorite].ImageUrl}`} />}
         </PaddingBlue>
         <PaddingBlue>
-            ...Chart goes here
+            <ReactHighcharts config={highchartsConfig.call(this)} />
         </PaddingBlue>
     </ChartGrid>]
 }
