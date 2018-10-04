@@ -2,5 +2,8 @@
     "bar" : {
         "settings" : "SETTINGS",
         "dashboard" : "DASHBOARD"
+    },
+    "setup" : {
+        "time_unit" : 10
     }
 }

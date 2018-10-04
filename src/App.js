@@ -12,6 +12,7 @@ const _ = require('lodash');
 const cc = require('cryptocompare');
 const fuzzy = require('fuzzy');
 const config = require('./config.json');
+const moment = require('moment'); 
 
 // AppBar is a external method.  Not a seperate react component.  It preserves this reference.
 // You don't always need to create a new react component.
@@ -45,12 +46,14 @@ class App extends Component {
   componentDidMount = () => {
     this.fetchCoin();
     this.fetchPrice();
+    this.fetchHistorical();
   }
   fetchCoin = async () => {
     let coinList = (await cc.coinList()).Data;
     this.setState( {coinList} );
   }
   fetchPrice = async () => {
+    console.log('fetching Price...');
     let prices;
     try {
       prices = await this.prices();
@@ -58,6 +61,26 @@ class App extends Component {
       this.setState({error: true});
     }
     this.setState({prices});
+  }
+  fetchHistorical = async() => {
+    console.log('fetching historical... ', this.state.currentFavorite);
+    if (this.state.currentFavorite) {
+      let symbol = this.state.currentFavorite;
+      let results = await this.historical(symbol);
+      let historical = [{
+        name: this.state.currentFavorite,
+        data: results.map((ticker, index) => [moment().subtract({months: config.setup.time_unit - index }).valueOf(), ticker.USD] )
+      }];
+      this.setState({historical});
+      console.log(historical);
+    }
+  }
+  historical = (symbol) => {
+    let promises = [];
+    for (let units = config.setup.time_unit; units > 0; --units) {
+      promises.push(cc.priceHistorical(symbol, ['USD'], moment().subtract({months: units}).toDate()))
+    }
+    return Promise.all(promises);
   }
   prices = () => {
     let promises = [];
@@ -79,11 +102,14 @@ class App extends Component {
       firstVisit: false, 
       page:config.bar.dashboard, 
       prices: null,
+      historical: null,
       currentFavorite
     });
+    this.setState({prices: null, historical: null}, () => {
+      this.fetchPrice();
+      this.fetchHistorical();
+    });
     localStorage.setItem('cryptoFavorite', JSON.stringify({favorites: this.state.favorites, currentFavorite}));
-    this.setState({prices: null});
-    this.fetchPrice();
   };
   settingsContent = () => {
     return <div>

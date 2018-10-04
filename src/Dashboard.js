@@ -48,7 +48,7 @@ export default function() {
             let tileProps = {
                 dashboardFavorite: symbol === this.state.currentFavorite,
                 onClick : () => {
-                    this.setState({currentFavorite : symbol});
+                    this.setState({currentFavorite : symbol, historical: null}, this.fetchHistorical);
                     localStorage.setItem(
                         'cryptoFavorite', JSON.stringify(
                         {
@@ -80,7 +80,11 @@ export default function() {
             {<img alt="nothing" style={{height: '200px', display: 'block', margin:'auto'}} src={`http://www.cryptocompare.com/${this.state.coinList[this.state.currentFavorite].ImageUrl}`} />}
         </PaddingBlue>
         <PaddingBlue>
-            <ReactHighcharts config={highchartsConfig.call(this)} />
+            { 
+                this.state.historical ?
+                    <ReactHighcharts config={highchartsConfig.call(this)} /> :
+                    <div style={{padding: '10px'}}> LOADING HISTORICAL DATA.... </div>
+            }
         </PaddingBlue>
     </ChartGrid>]
 }
