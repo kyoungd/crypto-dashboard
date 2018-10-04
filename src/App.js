@@ -53,6 +53,7 @@ class App extends Component {
     this.setState( {coinList} );
   }
   fetchPrice = async () => {
+    if (this.state.firstVisit) return;
     console.log('fetching Price...');
     let prices;
     try {
@@ -63,6 +64,7 @@ class App extends Component {
     this.setState({prices});
   }
   fetchHistorical = async() => {
+    if (this.state.firstVisit) return;
     console.log('fetching historical... ', this.state.currentFavorite);
     if (this.state.currentFavorite) {
       let symbol = this.state.currentFavorite;
@@ -77,7 +79,7 @@ class App extends Component {
   }
   historical = (symbol) => {
     let promises = [];
-    for (let units = config.setup.time_unit; units > 0; --units) {
+    for (let units = config.setup.time_unit; units >= 0; --units) {
       promises.push(cc.priceHistorical(symbol, ['USD'], moment().subtract({months: units}).toDate()))
     }
     return Promise.all(promises);
@@ -128,7 +130,7 @@ class App extends Component {
     if (!this.state.coinList) {
       return <div>Coin List Loading...</div>
     }
-    if (!this.state.prices) {
+    if (!this.state.firstVisit && !this.state.prices) {
       return <div>Coin Price Loading...</div>
     }
   }
