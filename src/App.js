@@ -32,46 +32,49 @@ const checkFirstVisit = () => {
       page: config.bar.settings
     }
   }
-  let {favorites, currentFavorite } = cryptoFavorite;
-  return {favorites, currentFavorite};
+  let {favorites, currentFavorite, timeInterval } = cryptoFavorite;
+  return {favorites, currentFavorite, timeInterval };
 }
 
 class App extends Component {
   state = {
     page: config.bar.dashboard,
-    favorites: ['ETH', 'BTC', 'XMR', 'DOGE', 'EOS'],
+    favorites: ['ETH', 'BTC', 'XMR', 'DOGE', 'EOS', 'BOOM'],
     ...checkFirstVisit()
   };
-
   componentDidMount = () => {
     this.fetchCoin();
     this.fetchPrice();
     this.fetchHistorical();
   }
+  validatedCoinList = (coinList) => {
+    let validCoinList = [];
+    this.state.favorites.forEach(symbol => {
+      if (coinList[symbol])
+        validCoinList.push(symbol);
+    })
+    return validCoinList;
+  }
   fetchCoin = async () => {
     let coinList = (await cc.coinList()).Data;
-    this.setState( {coinList} );
+    this.setState( {coinList, favorites: this.validatedCoinList(coinList)} );
   }
   fetchPrice = async () => {
     if (this.state.firstVisit) return;
     console.log('fetching Price...');
-    let prices;
-    try {
-      prices = await this.prices();
-    } catch (err) {
-      this.setState({error: true});
-    }
+    let prices = await this.prices();
     this.setState({prices});
   }
   fetchHistorical = async() => {
     if (this.state.firstVisit) return;
     console.log('fetching historical... ', this.state.currentFavorite);
     if (this.state.currentFavorite) {
+      let ti = this.state.timeInterval;
       let symbol = this.state.currentFavorite;
       let results = await this.historical(symbol);
       let historical = [{
         name: this.state.currentFavorite,
-        data: results.map((ticker, index) => [moment().subtract({months: config.setup.time_unit - index }).valueOf(), ticker.USD] )
+        data: results.map((ticker, index) => [moment().subtract({[ti]: config.setup.time_unit - index }).valueOf(), ticker.USD] )
       }];
       this.setState({historical});
       console.log(historical);
@@ -79,17 +82,24 @@ class App extends Component {
   }
   historical = (symbol) => {
     let promises = [];
+    let ti = this.state.timeInterval;
+    console.log('ti -> ', ti);
     for (let units = config.setup.time_unit; units >= 0; --units) {
-      promises.push(cc.priceHistorical(symbol, ['USD'], moment().subtract({months: units}).toDate()))
+      promises.push(cc.priceHistorical(symbol, ['USD'], moment().subtract({[ti]: units}).toDate()))
     }
     return Promise.all(promises);
   }
-  prices = () => {
-    let promises = [];
-    this.state.favorites.forEach((coin) => {
-      promises.push(cc.priceFull(coin, "USD"));
+  prices = async() => {
+    let validCoins = [];
+    this.state.favorites.forEach(async (coin) => {
+      try {
+        let validCoin = await cc.priceFull(coin, "USD");
+        validCoins.push(validCoin);
+      } catch (e) {
+        console.warn('prices() coin price fetch error: ', e);
+      }
     });
-    return Promise.all(promises);
+    return validCoins;
   }
   displayInDashboard = () => this.state.page === config.bar.dashboard;
   displayInSettings = () => this.state.page === config.bar.settings;
@@ -105,13 +115,13 @@ class App extends Component {
       page:config.bar.dashboard, 
       prices: null,
       historical: null,
+      timeInterval: 'months',
       currentFavorite
-    });
-    this.setState({prices: null, historical: null}, () => {
+    }, () => {
       this.fetchPrice();
       this.fetchHistorical();
+      localStorage.setItem('cryptoFavorite', JSON.stringify({favorites: this.state.favorites, currentFavorite, timeInterval: this.state.timeInterval}));
     });
-    localStorage.setItem('cryptoFavorite', JSON.stringify({favorites: this.state.favorites, currentFavorite}));
   };
   settingsContent = () => {
     return <div>

@@ -1,7 +1,7 @@
 import React from 'react';
 import { CoinGrid, CoinTile, CoinHeader, CoinSymbol } from './CoinList';
 import styled, {css} from 'styled-components';
-import { fontSizeBig, fontSize3, subtleBoxShadow, lightBlueBackground } from './Style';
+import { fontSizeBig, fontSize3, subtleBoxShadow, lightBlueBackground, backgroundColor2, fontSize2 } from './Style';
 import highchartsConfig from './HighchartsConfig';
 import highchartsTheme from './HighchartsTheme';
 
@@ -40,6 +40,16 @@ const ChartGrid = styled.div`
     grid-gap:20px;
 `
 
+const ChartSelect = styled.select`
+    ${backgroundColor2}
+    color: #1163c9;
+    border: 1px solid;
+    ${fontSize2}
+    margin: 5px;
+    height: 25px;
+    place-self: center left;
+    float: right;
+`
 export default function() {
     return [<CoinGrid> {
         this.state.prices.map((coin, index) => {
@@ -80,6 +90,24 @@ export default function() {
             {<img alt="nothing" style={{height: '200px', display: 'block', margin:'auto'}} src={`http://www.cryptocompare.com/${this.state.coinList[this.state.currentFavorite].ImageUrl}`} />}
         </PaddingBlue>
         <PaddingBlue>
+            <ChartSelect defaultValue={this.state.timeInterval} onChange={(e)=>{
+                this.setState({timeInterval: e.target.value}, () => {
+                    localStorage.setItem(
+                        'cryptoFavorite', JSON.stringify(
+                        {
+                            ...JSON.parse(localStorage.getItem("cryptoFavorite")),
+                            timeInterval: this.state.timeInterval
+                        }));
+
+                    this.fetchHistorical();
+                });
+                console.log(e.target.value);
+            }}>
+                <option value="hours">Hours</option>
+                <option value="days">Days</option>
+                <option value="weeks">Weeks</option>
+                <option value="months">Months</option>
+            </ChartSelect>
             { 
                 this.state.historical ?
                     <ReactHighcharts config={highchartsConfig.call(this)} /> :
