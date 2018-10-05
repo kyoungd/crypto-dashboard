@@ -20,7 +20,7 @@ const TicketPrice = styled.div`
     ${fontSizeBig}
 `
 
-const CoinTileCompact = CoinTile.extend`
+const CoinTileCompact = styled(CoinTile)`
     ${fontSize3}
     display-grid;
     grid-template-columns: repeat(3, 1fr);
@@ -51,11 +51,12 @@ const ChartSelect = styled.select`
     float: right;
 `
 export default function() {
-    return [<CoinGrid> {
+    return [<CoinGrid key={'coinGrid'}> {
         this.state.prices.map((coin, index) => {
             let symbol = Object.keys(coin)[0];
             let data = coin[symbol]['USD'];
             let tileProps = {
+                key: symbol,
                 dashboardFavorite: symbol === this.state.currentFavorite,
                 onClick : () => {
                     this.setState({currentFavorite : symbol, historical: null}, this.fetchHistorical);
@@ -84,34 +85,35 @@ export default function() {
         })
     }
     </CoinGrid>,
-    <ChartGrid>
+    <ChartGrid key={'chartGrid'}>
         <PaddingBlue>
             <h2>{ this.state.coinList[this.state.currentFavorite].CoinName }</h2>
-            {<img alt="nothing" style={{height: '200px', display: 'block', margin:'auto'}} src={`http://www.cryptocompare.com/${this.state.coinList[this.state.currentFavorite].ImageUrl}`} />}
+            {<img alt={this.state.currentFavorite} style={{height: '200px', display: 'block', margin:'auto'}} src={`http://www.cryptocompare.com/${this.state.coinList[this.state.currentFavorite].ImageUrl}`} />}
         </PaddingBlue>
         <PaddingBlue>
             <ChartSelect defaultValue={this.state.timeInterval} onChange={(e)=>{
-                this.setState({timeInterval: e.target.value}, () => {
+                this.setState({timeInterval: e.target.value, historical: null}, () => {
                     localStorage.setItem(
                         'cryptoFavorite', JSON.stringify(
                         {
                             ...JSON.parse(localStorage.getItem("cryptoFavorite")),
                             timeInterval: this.state.timeInterval
                         }));
-
+                    
                     this.fetchHistorical();
                 });
                 console.log(e.target.value);
             }}>
-                <option value="hours">Hours</option>
                 <option value="days">Days</option>
                 <option value="weeks">Weeks</option>
                 <option value="months">Months</option>
             </ChartSelect>
             { 
-                this.state.historical ?
-                    <ReactHighcharts config={highchartsConfig.call(this)} /> :
-                    <div style={{padding: '10px'}}> LOADING HISTORICAL DATA.... </div>
+                    this.state.historical ?
+                        <div style={{overflow: 'hidden'}}>
+                            <ReactHighcharts config={highchartsConfig.call(this)} /> 
+                        </div> :
+                        <div style={{padding: '10px'}}> LOADING HISTORICAL DATA.... </div>
             }
         </PaddingBlue>
     </ChartGrid>]

@@ -39,7 +39,7 @@ const checkFirstVisit = () => {
 class App extends Component {
   state = {
     page: config.bar.dashboard,
-    favorites: ['ETH', 'BTC', 'XMR', 'DOGE', 'EOS', 'BOOM'],
+    favorites: ['ETH', 'BTC', 'EOS', 'XMR', 'DOGE'],
     ...checkFirstVisit()
   };
   componentDidMount = () => {
@@ -61,13 +61,11 @@ class App extends Component {
   }
   fetchPrice = async () => {
     if (this.state.firstVisit) return;
-    console.log('fetching Price...');
     let prices = await this.prices();
     this.setState({prices});
   }
   fetchHistorical = async() => {
     if (this.state.firstVisit) return;
-    console.log('fetching historical... ', this.state.currentFavorite);
     if (this.state.currentFavorite) {
       let ti = this.state.timeInterval;
       let symbol = this.state.currentFavorite;
@@ -77,13 +75,11 @@ class App extends Component {
         data: results.map((ticker, index) => [moment().subtract({[ti]: config.setup.time_unit - index }).valueOf(), ticker.USD] )
       }];
       this.setState({historical});
-      console.log(historical);
     }
   }
   historical = (symbol) => {
     let promises = [];
     let ti = this.state.timeInterval;
-    console.log('ti -> ', ti);
     for (let units = config.setup.time_unit; units >= 0; --units) {
       promises.push(cc.priceHistorical(symbol, ['USD'], moment().subtract({[ti]: units}).toDate()))
     }
@@ -130,7 +126,7 @@ class App extends Component {
       { CoinList.call(this, true) }
       <CenterDiv>
         <ConfirmButton onClick={()=>this.confirmFavorites() }>
-          Confirm Favorites
+          Select Favorites
         </ConfirmButton>
       </CenterDiv>
       { CoinList.call(this) }
@@ -188,7 +184,11 @@ class App extends Component {
         { this.loadingContent() || 
           <Content>
             { this.displayInSettings() && this.settingsContent() }
-            { this.displayInDashboard() && DashboardContent.call(this) }
+            { this.displayInDashboard() && this.state.favorites.length > 0 && DashboardContent.call(this) }
+            { this.displayInDashboard() && this.state.favorites.length <= 0 && 
+            <div style={{padding: '20px'}}>
+              NO FAVORITES SELECTED.  USE SETTING AND SELECT FAVORITES.
+            </div>}
           </Content>
         }
         

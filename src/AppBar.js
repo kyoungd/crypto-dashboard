@@ -9,7 +9,7 @@ const ControlButton = styled.div`
   cursor: pointer;
   ${props => props.active && css`
     text-shadow: 0px 0px 60px #03ff03;
-    font-size:1.1em;
+    font-size:1.15em;
   `}
 `
 
