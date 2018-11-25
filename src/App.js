@@ -9,7 +9,7 @@ import { ConfirmButton } from './Button';
 import DashboardContent from './Dashboard';
 
 const _ = require('lodash');
-const cc = require('cryptocompare');
+const cc = require('./Cryptocompare');
 const fuzzy = require('fuzzy');
 const config = require('./config.json');
 const moment = require('moment'); 
